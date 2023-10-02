@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: joomla
+spec:
+  selector:
+    app: joomla
+  externalIPs:
+  - 10.0.0.4
+  - 10.0.0.5
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: joomla
+  labels:
+    app: joomla
+spec:
+  replicas: 2
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: joomla
+  template:
+    metadata:
+      labels:
+        app: joomla
+    spec:
+      containers:
+        - name: joomla
+          image: localhost:32000/joomla
+          ports:
+            - containerPort: 80
+          env:
+            - name: JOOMLA_DB_HOST
+              value: mysql-joomla
+            - name: JOOMLA_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-joomla-auth
+                  key: username
+            - name: JOOMLA_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-joomla-auth
+                  key: password
+            - name: JOOMLA_DB_NAME
+              value: joomlaDatabase

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>My Chat</title>
+        <link rel="stylesheet" href="./style.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    </head>
+    <body>
+
+        <div id="wrapper">
+            <div id="menu">
+                <p class="welcome">My Chat</p>
+            </div>
+ 
+            <div id="chatbox"></div>
+ 
+            <form name="message" action="post.php">
+                <input name="usermsg" type="text" id="usermsg" placeholder="Type your message here" autocomplete="off" />
+                <button type="submit" id="submitmsg"><i class="fa fa-paper-plane-o" style="color:white"></i></button>
+            </form>
+        </div>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                var newMessageReceived = false;
+            
+                $("#submitmsg").click(function () {
+                    var clientmsg = $("#usermsg").val();
+                    $.post("post.php", { text: clientmsg }, function() {
+                        newMessageReceived = true;
+                    });
+                    $("#usermsg").val("");
+                    return false;
+                });
+            
+                var pollForNewMessages = function() {
+                    $.get("select.php", function(data) {
+                        var chatbox = $("#chatbox");
+                        var shouldScrollToBottom = chatbox.scrollTop() + chatbox.height() === chatbox[0].scrollHeight;
+            
+                        chatbox.html(data);
+            
+                        if (newMessageReceived) {
+                            newMessageReceived = false;
+                            shouldScrollToBottom = true;
+                        }
+            
+                        if (shouldScrollToBottom) {
+                            chatbox.scrollTop(chatbox[0].scrollHeight);
+                        }
+                    });
+                };
+            
+                pollForNewMessages();
+                setInterval(pollForNewMessages, 1000);
+            });            
+        </script>
+    </body>
+</html>

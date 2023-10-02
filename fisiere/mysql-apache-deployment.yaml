@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-apache
+spec:
+  selector:
+    app: mysql-apache
+  ports:
+    - protocol: TCP
+      port: 3305
+      targetPort: 3306
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-apache
+  labels:
+    app: mysql-apache
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mysql-apache
+  template:
+    metadata:
+      labels:
+        app: mysql-apache
+    spec:
+      containers:
+        - name: mysql-apache
+          image: mysql:5.7
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-apache-auth
+                  key: username
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-apache-auth
+                  key: password
+            - name: MYSQL_DATABASE
+              value: chatDatabase
+          volumeMounts:
+            - name: mysql-apache-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-apache-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-apache-pvc
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-apache-auth
+type: Opaque
+data:
+  username: cm9vdA==  # Base64-encoded value of "root"
+  password: cGFzc3dvcmQ=  # Base64-encoded value of "password"

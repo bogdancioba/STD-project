@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-joomla
+spec:
+  selector:
+    app: mysql-joomla
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-joomla
+  labels:
+    app: mysql-joomla
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mysql-joomla
+  template:
+    metadata:
+      labels:
+        app: mysql-joomla
+    spec:
+      containers:
+        - name: mysql-joomla
+          image: localhost:32000/mysql-joomla
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-joomla-auth
+                  key: username
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-joomla-auth
+                  key: password
+            - name: MYSQL_DATABASE
+              value: joomlaDatabase
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-joomla-auth
+type: Opaque
+data:
+  username: cm9vdA==  # Base64-encoded value of "root"
+  password: cGFzc3dvcmQ=  # Base64-encoded value of "password"
